@@ -3,6 +3,8 @@
  * whether they are coPrime or not. Coprime, by definition, is when 
  * two numbers have a GCD of 1.
  * @author	Zorian Thornton
+ * This function will also need to allow for larger integers for user input 
+ * or unexpected output may occur. Run-time efficency info on individual methods.
 **/
 #include<stdio.h>
 #include<stdlib.h>

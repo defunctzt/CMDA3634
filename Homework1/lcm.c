@@ -1,5 +1,7 @@
 /**
  * Calculates least common multiple of two user inputted numbers.
+ * This method will work fine, but we may want to adjust the data types so
+ * they can hold more than a standard integer. We could try a 64 bit integer for example.
  * @author Zorian Thornton
 **/
 #include<stdio.h>

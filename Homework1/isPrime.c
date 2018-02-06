@@ -1,6 +1,8 @@
 /**
  * Determines if a user input number is prime or not.
  * @author Zorian Thornton
+ * This code may need some data type readjusting down the line to
+ * accomodate for larger user input. (64-bit integers for example).
 **/
 #include<stdio.h>
 #include<stdlib.h>

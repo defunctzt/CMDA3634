@@ -7,6 +7,8 @@ int64_t gcd(int64_t x, int64_t y);
 /**
  * Main function. Asks user for two numbers as input,
  * and returns the greatest common divisor.
+ * This function runs pretty quickly, but we will eventually get
+ * unexpected output when our input gets larger than 64-bit integers.
 **/
 int main()
 {
