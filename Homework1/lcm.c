@@ -35,6 +35,7 @@ int main()
 
 /**
  * Calculates the gcd of two integers.
+ * Efficency: Stated multiple times before.
 **/
 int gcd(int x, int y)
 {
@@ -55,6 +56,7 @@ int gcd(int x, int y)
 
 /**
  * Calculates the lcm of two integers.
+ * Efficency: Runs in constant time.
 **/
 int lcm(int x, int y)
 {

@@ -34,6 +34,8 @@ int main()
  * Determines if a given number is prime.
  * @param n	The number being evaluated.
  * @retrun 0 if the number is prime, 1 if it is not.
+ * Efficency: This soltion runs in log time. So the speed of this
+ * algorithim is pretty fast, but may take a while if the prime number is very big.
 **/
 int isPrime(int n)
 {

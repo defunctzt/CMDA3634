@@ -24,6 +24,8 @@ int main()
 /**
  * Helper function that calculates the greatest common divisor
  * of two given integers.
+ * Efficency: This solution is y - O(log(a+b)). This will work pretty efficently until
+ * prime numbers get really large.
 **/
 int64_t gcd(int64_t x, int64_t y)
 {

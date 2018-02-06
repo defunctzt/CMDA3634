@@ -42,6 +42,8 @@ int main()
  * @param x The first number to evaluate.
  * @param y The second number to evaluate.
  * @return The greatest common divsor of x and y.
+ * Efficency: Same as gcd function. Pretty good, but could take a while if the numbers entered
+ * become very very large.
 **/
 int gcd(int x, int y)
 {
