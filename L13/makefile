@@ -9,7 +9,7 @@ INCLUDES = $(wildcard $(INCLUDEDIR)/*h)
 OBJECTS = $(subst $(SOURCEDIR)/,$(OBJDIR)/,$(SOURCE:.c=.o))
 
 DEPS = $(INCLUDES) 
-FLAGS = -I$(INCLUDEDIR) -O3 -g
+FLAGS = -I$(INCLUDEDIR) -O3 -g -fopenmp
 LIBS  = -lm
 
 CC =  gcc
