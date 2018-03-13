@@ -1,0 +1,5 @@
+Question Answers:
+
+2f.) The program runs faster with multiple threads. My specific program gives the same answer every time. I was told this shouldn't happen by TAs, but none of them and even Dr. Chalmers couldn't figure out why I was having this issue. So I left it be.
+
+2j.) My job wouldn't run on NewRiver during class, and for some reason, I'm unable to log on to NewRiver at home. So I was unable to get the runtimes for NewRiver and make the plot.
