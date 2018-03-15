@@ -149,7 +149,11 @@ unsigned int findGenerator(unsigned int p) {
 	{
 		if (modExp(g,2,p) != 1 && (modExp(g,q,p) != 1))
 		{
-			return g;
+			if (g != 0)
+			{
+
+				return g;
+			}
 		}//end if
 		else
 		{
