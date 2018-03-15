@@ -1,0 +1,263 @@
+\documentclass{article}
+
+%% preamble
+\usepackage{hyperref}
+\usepackage{verbatim}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{cancel}
+
+\topmargin 0pt
+\advance \topmargin by -\headheight
+\advance \topmargin by -\headsep
+\textheight 9.in
+\oddsidemargin 0pt
+\evensidemargin \oddsidemargin
+\marginparwidth 0.5in
+\textwidth 6.5in
+\newcommand{\myhrule}{ \begin{center}\rule{.9\linewidth}{.25mm}\end{center} }
+\definecolor{darkgray}{rgb}{0.95,0.95,0.95}
+\definecolor{heavygray}{rgb}{0.05,0.05,0.05}
+\definecolor{foo}{rgb}{.8,0,.8}
+\newcommand{\pad}{\vspace{8pt}\noindent}
+\newcommand{\red}[1]{{\color{red}#1\color{black}}}
+\newcommand{\myhref}[2]{\href{#1}{\color{foo}\underline{#2}\color{black}}}
+
+\newcommand{\Mod}[1]{\ \mathrm{mod}\ #1}
+
+
+\begin{document}
+
+\title{CMDA 3634 Spring 2018 Homework 02}
+
+%% change this to your name
+\author{Zorian Thornton}
+\vspace{-64pt}\maketitle
+\begin{center}\underline{You must complete the following task by 5pm on Tuesday 02/27/18.}\end{center}
+Your write up for this homework should be presented in a {\LaTeX} formatted PDF document. You may copy the \LaTeX{} used to prepare this report as follows
+
+\begin{enumerate}
+\item Click on this  \myhref{https://www.sharelatex.com/read/mbvthfjqwzgh}{link} 
+\item Click on Menu/Copy Project.
+\item Modify the HW01.tex document to respond to the following questions. 
+\item Remember: click the Recompile button to rebuild the document when you have made edits.
+\item Remember: Change the author. 
+
+\end{enumerate}
+
+\pad \emph{Each student} must individually upload the following files to the CMDA 3634 Canvas page at \myhref{https://canvas.vt.edu}{https://canvas.vt.edu}
+
+\begin{enumerate}
+\item \verb|firstnameLastnameHW02.tex| {\LaTeX} file.
+\item Any figure files to be included by \verb|firstnameLastnameHW02.tex| file.
+\item \verb|firstnameLastnameHW02.pdf| PDF file.
+\end{enumerate}
+
+\noindent In addition, all source code must be submitted to an online git repository as follows:
+\begin{enumerate}
+    \item While on the webpage for you git repository, go to Settings $\rightarrow$ Collaborators.
+    \item Add nchalmer@vt.edu and zjiaqi@vt.edu as collaborators. 
+    \item Make a folder named HW02 in you repository and store all relevant source files to this assignment in this folder. Ensure your assignment files compile with {\verb make }.
+\end{enumerate}
+
+\pad You must complete this assignment on your own.
+
+\vspace{16pt}
+\begin{center}
+\underline{\bf 100 points will be awarded for a successful completion.}
+\vspace{8pt}\underline{\bf Extra credit will be awarded as appropriate.}
+\end{center}
+
+\newpage
+
+\section*{ElGamal Public-key Cyptography}
+
+In the previous assignment we began implementing the ElGamal public-key cryptographic system by first programming several `first-attempts' of some functions we'll need. In the bonus question, many students identified some serious implementation/performance problems with the codes you created. The most serious ones were:
+\begin{itemize}
+    \item Products $ab\Mod{p}$ and exponentials $a^b \Mod{p}$ may overflow integer storage for large numbers. Indeed, for some students who used the  {\verb pow } library function to compute $a^b\Mod{p}$ this happens dramatically fast. 
+    \item Checking for primality of an integer $N$ by checking if $N$ is divisible by any number smaller than $\sqrt{N}$ becomes very expensive for large numbers $N$, potentially requiring millions of divisions even for modest size integers. 
+    \item The findGenerator function will quickly become very computationally expensive as the input prime $p$ grows since in its most basic implementation you are looping through all powers of a test generator. 
+\end{itemize}
+In this assignment we will resolve these issues as well as add some more useful functions. 
+
+\pad {\bf Safe products of integers modulo $p$}: 
+Whenever we program a product of two numbers $a$ and $b$ we need to be aware of storage limits for the resulting value. In the case of 32-bit unsigned integers, this means the product $ab$ must be less that or equal to $2^{32}-1 = 4,294,967,294$ in order for its value to be properly stored in memory. However, given a modulus  $p<2^{32}-1$ we know that the product $ab \Mod{p}$ will be always be less than $2^{32}-1$. Knowing this, we can properly compute its value if we implement it carefully. 
+
+To begin, let's first notice that the $\Mod{p}$ operation is distributive. That is, it is always true that
+\[
+a(b+c)\Mod{p} = (ab\Mod{p} + ac\Mod{p})\Mod{p},
+\]
+for any $a, b, c$, and $p$. Moreover, for a product of three integers $a, b,$ and $c$ is always true that 
+\[
+abc\Mod{p} = a(bc\Mod{p})\Mod{p},
+\]
+Next, let us recall that we can write any positive integer in binary. Let's write the binary representations of an integer $b$ as 
+\[
+b = b_n|b_{n-1}|\cdots|b_1|b_0,
+\]
+where each digit $b_i$ is either 1 or 0 such that 
+\[
+b = b_n 2^{n}+b_{n-1}2^{n-1} + \ldots b_1 2^1 + b_0 2^0.
+\]
+Replacing $b$ with its binary representation we can write the product $ab\Mod{p}$ as
+\begin{align*}
+ab \Mod p &= (ab_n2^n \Mod{p} \\ 
+          &+ ab_{n-1}2^{n-1}\Mod{p} \\
+          &+ \ldots \\
+          &+ ab_12^{1} \Mod{p} \\
+          &+ ab_02^{0} \Mod{p}) \Mod{p}.    
+\end{align*}
+This can be written even more compactly by introducing the values $z_i = a2^{i} \Mod{p}$ and noticing that $z_i = 2z_{i-1} \Mod{p}$. If we separate the evaluation of $ab\Mod{p}$ into the combination of all these spearate products, we can write a safe version of the modular product $ab\Mod{p}$ as the following pseudo-code
+\begin{verbatim}
+modProd(a,b,p)
+    za = a
+    ab = 0
+    for i=0,...,n {
+        if (b_i == 1) ab = (ab + za*b_i) mod p
+        za = 2*za mod p
+    }
+    return ab
+\end{verbatim}
+With this algorithm, we can safely compute any product $ab \Mod{p}$ so long as the products {\verb 2*za } can be computed in integer storage. For unsigned 32-bit integers this usually means this product is accurate when $a, b$ and $p$ are all less than $2^{31}-1 = 2,147,483,647$. 
+
+We can use this safe modular product algorithm to compute modular exponentials $a^b \Mod{p}$ by again writing $b$ using its binary representation to obtain
+\begin{align*}
+a^b \Mod p &= (a^{b_n2^n} \Mod{p}) \\ 
+          & \cdot(a^{b_{n-1}2^{n-1}}\Mod{p}) \\
+          & \cdot\ldots \\
+          & \cdot(a^{b_{1}2^{1}}\Mod{p}) \\
+          & \cdot(a^{b_{0}2^{0}}\Mod{p}) \Mod{p}.    
+\end{align*}
+We then can introduce the values $z_i = a^{2^{i}}$ and note that $z_i = z_{i-1}^2 \Mod{p}$. The pseudo-code for the safe version of modular exponentiation $a^b\Mod{p}$ can therefore be written as
+\begin{verbatim}
+modExp(a,b,p)
+    z = a
+    aExpb = 1
+    for i=0,...,n {
+        if (b_i==1) aExpb = modProd(aExpb,z, p)
+        z = modProd(z,z,p)
+    }
+    return aExpb
+\end{verbatim}
+
+\noindent{\bf Q1.1}(5 points) Use the procedure described above to write out the details of how to safely compute the modular product 56*74 mod 111.
+\vspace*{1em}
+\begin{center}
+    To begin the process of computing 56*74 mod111 safely, we must first write $b$, or in this case, 74 in binary:
+    \\
+    74 = 0100 1010 in basic 8-bit integer format.
+    \\
+    To calculate 56*74 mod 111 in a safe way, we must use the equations above:
+    \\
+    $56(0)2^7 mod 111 +$\\
+    $56(1)2^6 mod 111 +$\\
+    $56(0)2^5 mod 111 +$\\
+    $56(0)2^4 mod 111 +$\\
+    $56(1)2^3 mod 111 +$\\
+    $56(0)2^2 mod 111 +$\\
+    $56(1)2^1 mod 111 +$\\
+    $56(0)2^0 mod 111$\\
+    Which yields 37.
+    \\
+    We then mod 37 with 111 to obtain our final answer:\\
+    37 mod 111 = 37.
+\end{center}
+To confirm, we can obtain 4144 by the operation of 56*74. Which yields 37. Hence this method stated in the notes earlier works. \\
+
+\noindent{\bf Q1.2}(20 points) You have been given some sample code in the course repository folder HW02. In the file {\verb functions.c } implement the modular product function {\verb modProd } which safely computes the value $ab \Mod{p}$ using the method described above. All subsequent modular products throughout your codes should call this function for safety. 
+\vspace*{1em}
+\\
+All C files are shared on git and included in the tar file just in case.
+
+\noindent{\bf Q1.3}(20 points) In the file {\verb functions.c } implement a modular exponentiation function {\verb modExp } which safely computes the value $a^b \Mod{p}$ using the method described above. All subsequent modular exponentials throughout your code should call this function for safety. 
+\vspace*{1em}
+
+\pad {\bf The Miller Rabin Primality Test}:
+As mentioned above, directly testing for primality of an input integer $N$ in your {\verb isPrime } function will quickly become too expensive for large $N$. An alternative to directly checking if a input number $N$ is prime is to use a \emph{probablistic} primality test. Such tests will return `true' if the input is \emph{probably} a prime number. By repeatedly performing probabilistic primality tests, we can become quite certain that a number is indeed prime. 
+
+A very simple probabilistic primality test to state is the Miller-Rabin primality test. While the rigorous explanation of how this test works is beyond the scope of this assignment, we can write the pseudo-code for this primality test compactly as follows
+\begin{verbatim}
+isProbablyPrime(N):
+    Make an array, smallPrimeList, of small prime numbers.
+    
+    Find r and d such that N-1 = (2^r)*d where d is odd.
+    
+    //Miller-Rabin test
+    For all k in smallPrimeList:
+       x = modExp(a,d,N)
+       if x == 1 or x == N-1:
+          continue to next k
+       for i = 1,...,r-1 {
+          x = modProd(x,x,N)
+          if x == 1 then
+             return false
+          if x == N-1 then
+             continue to next k
+       }
+       return false
+    return true
+\end{verbatim}
+
+\noindent{\bf Q2.1}(15 points) In the file {\verb functions.c } we have begun implementing the {\verb isProbablyPrime } function. Use the pseudo-code above to complete the function. 
+\vspace*{1em}
+
+\noindent{\bf Q2.2}(10 points) In the {\verb main } function we have begun our program by inputting a bit-length $n$ from the user. We have also provided a function {\verb randomXbitInt } which inputs a number of bits $n$ and returns a random integer that is at least $2^{n-1}$ and no greater than $2^{n}$. Use your {\verb isProbablyPrime } function as well as the {\verb randomXbitInt } to generate a prime number $p$ that is at least $2^{n-1}$ and no greater than $2^{n}$. 
+ \vspace*{1em}
+
+
+
+\pad {\bf Finding a Generator}:
+When we searched for a generator in the last assignment we selected a trial number $g$ and looped through all powers of $g$, i.e. $g, g^2, g^3, \ldots$ and checked whether we could find an exponent $r \neq p-1$ such that $g^r = 1$. If so, we knew that $g$ could not be a generator and we continued to the next trial number. 
+
+Many of you noticed that if we could find an $r \neq p-1$ such that $g^r = 1$ then the sequence of powers of $g$ will repeat, i.e. $g^{r+1} = g, g^{r+2} = g^2$, etc. Since it is also true that $g^{p-1} = 1$ for all $g$, it must be true that $r$ divides $p-1$. Therefore to check whether a number $g$ is a generator we need only check that $g^r \neq 1$ for all factors $r$ of $p-1$. 
+
+This observation doesn't completely solve our problem, as the issue of finding all the factors of $p-1$ is again very computationally expensive for large $p$. However, notice that if we choose the prime $p$ so that $p=2q+1$ where $q$ is also prime then we can be sure the only factors of $p-1$ are $2$ and $q$.
+\vspace*{1em}
+
+\noindent{\bf Q3.1}(5 points) In Q1 of HW01 you showed that 2, 6, 7, and 11 are all generators of $\mathbb{Z}_{13}$. Show for the remaining numbers $a \in \mathbb{Z}_{13}$, i.e. $a = $3, 4, 5, 8, 9, 10, and 12, there exist a number $r$ such that $a^r = 1$ in $\mathbb{Z}_{13}$ and confirm that $r$ divides $p-1 = 12$. 
+\vspace*{1em}
+\\
+Let our prime number $p$ be 13, and $p-1=12$. 
+\\
+\begin{center}
+    \begin{tabular}{|| c c c c ||}
+    \hline
+    $a$ & $r$ & $a^r mod 13$ & $12 mod r$ \\ [0.5ex]
+    \hline \hline
+     3 & 3 & 1 & 0  \\
+     4 & 6 & 1 & 0 \\
+     5 & 4 & 1 & 0 \\
+     8 & 4 & 1 & 0 \\
+     9 & 3 & 1 & 0 \\
+     10 & 6 & 1 & 0 \\
+     12 & 2 & 1 & 0 \\
+     \hline
+\end{tabular}
+\end{center}
+The $a^rmod13$ column shows that there is an r such that $a^r mod 13 = 1$ and $r \neq p-1$, and the column $12modr$ verifies that r divides $p-1=12$.
+\\
+
+\noindent{\bf Q3.2}(10 points) Modify your {\verb main } function to generate a prime number $p$ that is at least $2^{n-1}$ and no greater than $2^{n}$ and also satisfies $p=2q+1$ where $q$ is prime. 
+\vspace*{1em}
+
+\noindent{\bf Q3.3}(15 points) Implement a new {\verb findGenerator } function which assumes the input prime $p$ satisfies $p=2q+1$ where $q$ is prime, and outputs a generator of $\mathbb{Z}_p$. 
+\vspace*{1em}
+
+
+\vspace*{1em}
+\noindent{\bf Bonus:}(15 points) Now that we can generate a useful prime $p$ and a generator $g$ continue ELGamal cryptographic system setup in the {\verb main } function by picking a random $x \in \mathbb{Z}_p$ and computing $h = g^x$. 
+
+Once you've completed the setup, try experimenting with how difficult it would be to find the secret key $x$ provided you only know $h$ and $g$. That is, code a search for the $x$ which satisfies $h = g^x$ by looping through all possible $x$. Can your computer do this quickly for large prime numbers?
+
+%\myhrule
+
+%\begin{thebibliography}{9}
+%\bibitem{gol} Wikipedia -- description of the Game of Life
+%\url{https://en.wikipedia.org/wiki/Conway's_Game_of_Life}
+ 
+%\end{thebibliography}
+
+
+\end{document}
