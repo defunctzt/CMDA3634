@@ -1,4 +1,4 @@
-#include "mympi.h"
+include "mympi.h"
 
 int main(int argc, char ** argv)
 {

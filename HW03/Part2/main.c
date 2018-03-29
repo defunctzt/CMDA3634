@@ -23,25 +23,29 @@ int main (int argc, char **argv) {
   //begin with rank 0 getting user's input
   unsigned int n;
 
-  /* Q3.1 Make rank 0 setup the ELGamal system and
-    broadcast the public key information */
-  printf("Enter a number of bits: "); fflush(stdout);
-  char status = scanf("%u",&n);
-
-  //make sure the input makes sense
-  if ((n<3)||(n>31)) {//Updated bounds. 2 is no good, 31 is actually ok
-    printf("Unsupported bit size.\n");
-    return 0;   
-  }
-  printf("\n");
-
   //declare storage for an ElGamal cryptosytem
   unsigned int p, g, h, x;
+  /* Q3.1 Make rank 0 setup the ELGamal system and
+    broadcast the public key information */
+	if (rank == 0)
+	{
+  		printf("Enter a number of bits: "); fflush(stdout);
+  		char status = scanf("%u",&n);
 
-  //setup an ElGamal cryptosystem
-  setupElGamal(n,&p,&g,&h,&x);
+  		//make sure the input makes sense
+  		if ((n<3)||(n>31)) {//Updated bounds. 2 is no good, 31 is actually ok
+    		printf("Unsupported bit size.\n");
+    		return 0;   
+  		}
+  		printf("\n");
 
 
+  		//setup an ElGamal cryptosystem
+  		setupElGamal(n,&p,&g,&h,&x);
+	}
+	MPI_Bcast(&p,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+	MPI_Bcast(&g,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
+	MPI_Bcast(&h,1,MPI_UNSIGNED,0,MPI_COMM_WORLD);
 
   //Suppose we don't know the secret key. Use all the ranks to try and find it in parallel
   if (rank==0)
@@ -53,16 +57,40 @@ int main (int argc, char **argv) {
   unsigned int N = p-1; //total loop size
   unsigned int start, end;
   
-  start = 0; 
-  end = start + N;
+   
+  unsigned int div = N/size;
+  unsigned int rem = N%size;
+/*
+  if (rank == rem)
+  {
+  	start = rank + div*rank;
+	end = start + div - 1;
+  }//end if
+  if (rank < rem)
+  {
+  	start = rank + rank*div;
+	end = start + div;
+  }//end if
+  if (rank > rem)
+  {
+  	start = rem + rank*div;
+	end = start+div+1;
+  }//end if */
 
+	double startTime = MPI_Wtime();
   //loop through the values from 'start' to 'end'
-  for (unsigned int i=start;i<end;i++) {
-    if (modExp(g,i+1,p)==h)
-      printf("Secret key found! x = %u \n", i);
-  }
+  	for (unsigned int i=start;i<end;i++) {
+    	if (modExp(g,i+1,p)==h)
+      	printf("Secret key found! x = %u \n", i);
+  	}
+  	double endTime = MPI_Wtime();
+  	printf("The run time for this loop was %f. \n", endTime-startTime);
+
+	// Throughput is the number of operations divided by time.
+	printf("The throughput is %f. \n", N/(endTime-startTime));
 
   MPI_Finalize();
+  printf("Done!");
 
   return 0;
 }

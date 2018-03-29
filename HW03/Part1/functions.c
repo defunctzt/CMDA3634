@@ -164,5 +164,5 @@ void ElGamalDecrypt(unsigned int *m, unsigned int a,
   /* Q2.2 Implement the decryption routine for an ElGamal cryptographic system */
   unsigned int s = modExp(a,x,p); // Create s
   unsigned int invS = modExp(s,p-2,p); // Calculate s^-1
-  *m = modprod(*m,s*invS,p); // Recover message my calculating (m*s*s^-1)%p
+  *m = modprod(*m,invS,p); // Recover message my calculating (m*s*s^-1)%p
 }
