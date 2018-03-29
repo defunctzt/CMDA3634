@@ -61,7 +61,14 @@ int main (int argc, char **argv) {
   unsigned int div = N/size;
   unsigned int rem = N%size;
 
-
+ /*
+ 	BUG EXPLANAITION:
+ 	This portion of my code has a bug. My attempt to caluclate start and end 
+	is incorrect. I have an idea on how to fix it, but I did not have time to keep
+	trying things. The potetntial solution I came up with was making starting start at 0,
+	and end at start + N/size. Then running a double loop to move the start and end values
+	down as the rank number changed.
+ */
  if (rank == rem)
   {
   	start = rank + div*rank;
