@@ -60,8 +60,9 @@ int main (int argc, char **argv) {
    
   unsigned int div = N/size;
   unsigned int rem = N%size;
-/*
-  if (rank == rem)
+
+
+ if (rank == rem)
   {
   	start = rank + div*rank;
 	end = start + div - 1;
@@ -75,11 +76,11 @@ int main (int argc, char **argv) {
   {
   	start = rem + rank*div;
 	end = start+div+1;
-  }//end if */
-
+  }//end if 
 	double startTime = MPI_Wtime();
   //loop through the values from 'start' to 'end'
   	for (unsigned int i=start;i<end;i++) {
+
     	if (modExp(g,i+1,p)==h)
       	printf("Secret key found! x = %u \n", i);
   	}
@@ -90,7 +91,7 @@ int main (int argc, char **argv) {
 	printf("The throughput is %f. \n", N/(endTime-startTime));
 
   MPI_Finalize();
-  printf("Done!");
+
 
   return 0;
 }
