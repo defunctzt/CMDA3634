@@ -43,10 +43,11 @@ int main (int argc, char **argv) {
 
   //populate the string with a message
   strcpy(message, "Hello, this is the message as a string.");
+  //strcpy(message, "Try to decrypt this!");
   printf("Message = \"%s\"\n", message);
 
   /* Q1.1 Finish this line   */
-  unsigned int charsPerInt = ;
+  unsigned int charsPerInt = (n-1)/8;
 
   padString(message, charsPerInt);
   printf("Padded Message = \"%s\"\n", message);
@@ -88,11 +89,18 @@ int main (int argc, char **argv) {
 
   /* Q2.3 Parallelize this loop with OpenMP   */
   double startTime = omp_get_wtime();
-  for (unsigned int i=0;i<p-1;i++) {
-    if (modExp(g,i+1,p)==h) {
-      printf("Secret key found! x = %u \n", i);
-    } 
-  }
+
+  #pragma omp prallel
+  {
+  	#pragma omp for
+  		for (unsigned int i=0;i<p-1;i++) {
+    		if (modExp(g,i+1,p)==h) {
+      		printf("Secret key found! x = %u \n", i);
+			exit(0);
+    		} 
+  		}
+
+  }//end pramga 
   double endTime = omp_get_wtime();
 
   double totalTime = endTime-startTime;

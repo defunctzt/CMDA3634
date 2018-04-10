@@ -22,6 +22,7 @@ To create an image with 4096 x 4096 pixels (last argument will be used to set nu
 
 // Q2a: add include for CUDA header file here:
 #include "cuda.h"
+
 #define MXITER 1000
 
 typedef struct {
@@ -63,50 +64,48 @@ __device__ int testpoint(complex_t c){
 
 // Q2c: transform this function into a CUDA kernel
 __global__ void  mandelbrot(int Nre, int Nim, complex_t cmin, complex_t cmax, float *count){ 
-  int n,m;
 
-  int tx = threadIdx.x;
-  int ty = threadIdx.y;
-  int bx = blockIdx.x;
-  int by = blockIdx.y;
+  int tIdx = threadIdx.x;
+  int tIdy = threadIdx.y;
 
+  int bIdx = blockIdx.x;
+  int bIdy = blockIdx.y;
+
+  int bSizex = blockDim.x;
+  int bSizey = blockDim.y;
+
+  int i = tIdx + bIdx*bSizex; //unique x coordinate
+  int j = tIdy + bIdy*bSizey; //unique y coordinate
 
   complex_t c;
 
   double dr = (cmax.r-cmin.r)/(Nre-1);
   double di = (cmax.i-cmin.i)/(Nim-1);;
 
-  c.r = cmin.r + dr*m;
-  c.i = cmin.i + di*n;
 
-  count[m+n*Nre] = testpoint(c);
-      
-
+  c.r = cmin.r + dr*i;
+  c.i = cmin.i + di*j;
+    
+  count[i+j*Nre] = testpoint(c);
 }
 
 int main(int argc, char **argv){
 
-  // to create a 4096x4096 pixel image [ last argument is placeholder for number of threads ]
-
+  // to create a 4096x4096 pixel image [ last argument is placeholder for number of threads ] 
   // usage: ./mandelbrot 4096 4096 1  
   
 
   int Nre = atoi(argv[1]);
   int Nim = atoi(argv[2]);
   int Nthreads = atoi(argv[3]);
-  int N = Nre*Nim;
-  float *ans;
 
   // Q2b: set the number of threads per block and the number of blocks here:
-  cudaMalloc(&ans, N*sizeof(float));
-  int Bx = round(sqrt(Nthreads));
-  int Gx = (Nre+Nthreads-1)/Nthreads;
-  int Gy = (Nim+Nthreads-1)/Nthreads;
-  dim3 B(Bx,Bx,1); // Nre by Nim threads in thread-block
-  dim3 G(Gx,Gy,1); // Grids in thread grid
 
   // storage for the iteration counts
-  float *count = (float*) malloc(Nre*Nim*sizeof(float));
+  float *h_count = (float*) malloc(Nre*Nim*sizeof(float));
+
+  float *d_count;
+  cudaMalloc(&d_count,Nre*Nim*sizeof(float));
 
   // Parameters for a bounding box for "c" that generates an interesting image
   const float centRe = -.759856, centIm= .125547;
@@ -120,15 +119,21 @@ int main(int argc, char **argv){
   cmin.i = centIm - 0.5*diam;
   cmax.i = centIm + 0.5*diam;
 
+  //dimensions of thread blocks and grid
+  dim3 B(Nthreads,Nthreads,1);
+  dim3 G((Nre+Nthreads-1)/Nthreads,(Nim+Nthreads-1)/Nthreads,1);
+
+
   clock_t start = clock(); //start time in CPU cycles
 
   // compute mandelbrot set
-  mandelbrot <<G,B>> (Nre, Nim, cmin, cmax, count); 
+  mandelbrot<<<G,B>>>(Nre, Nim, cmin, cmax, d_count); 
+  cudaDeviceSynchronize(); 
   
-  //Memcopy
-  cudaMemcpy(count, ans, N*sizeof(float), cudaMemcpuDeviceToHost);
   clock_t end = clock(); //start time in CPU cycles
   
+  cudaMemcpy(h_count,d_count,Nre*Nim*sizeof(float),cudaMemcpyDeviceToHost);
+
   // print elapsed time
   printf("elapsed = %f\n", ((double)(end-start))/CLOCKS_PER_SEC);
 
@@ -136,10 +141,11 @@ int main(int argc, char **argv){
   FILE *fp = fopen("mandelbrot.png", "w");
 
   printf("Printing mandelbrot.png...");
-  write_hot_png(fp, Nre, Nim, count, 0, 80);
+  write_hot_png(fp, Nre, Nim, h_count, 0, 80);
   printf("done.\n");
 
-  free(count);
+  free(h_count);
+  cudaFree(d_count);
 
   exit(0);
   return 0;
