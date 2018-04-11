@@ -1,0 +1,1 @@
+We observe a sharp decline in runtime as the number of OpenMP threads increases, however, this increase levels off as the number of threads increases. We would aim to choose a number of threads to optimize runtime.
