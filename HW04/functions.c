@@ -220,13 +220,26 @@ void convertStringToZ(unsigned char *string, unsigned int Nchars,
 
   /* Q1.3 Complete this function   */
   /* Q2.2 Parallelize this function with OpenMP   */
+  unsigned int Cpi = Nchars/Nints;
   #pragma omp parallel
   {
   	#pragma omp for
 		for (int i = 0; i < strlen(string); i++)
 		{
-			Z[i] = string[i]; // *((unsigned char*)&string[i]);
+			if (Cpi == 2)
+			{
+				Z[i] = (((unsigned int)(string[Cpi*i]))<<8)+ (unsigned int)string[Cpi*i+1];
+			}//end if
+			else if (Cpi == 3)
+			{
+				Z[i] = (((unsigned int)(string[Cpi*i]))<<16) + (((unsigned int)(string[Cpi*i+1]))<<8) + (unsigned int)string[Cpi*i+2];
+			}//end if
+			else
+			{
+				Z[i] = (unsigned int)string[i]; // *((unsigned char*)&string[i]);
+			}
 		}//end for
+	
   }// end pragma 
 
 }
@@ -237,12 +250,38 @@ void convertZToString(unsigned int  *Z,      unsigned int Nints,
 
   /* Q1.4 Complete this function   */
   /* Q2.2 Parallelize this function with OpenMP   */
+  int Cpi = Nchars/Nints;
   #pragma omp parallel
   {
   	#pragma omp for
 		for (int i = 0; i < strlen(string); i++)
 		{
-			string[i] = Z[i];// *((unsigned char*)&Z[i]);
+			if (Cpi == 2)
+			{
+				int secondStream = Z[i] % 256;
+				char secondLetter = (char)secondStream;
+				int firstStream = (Z[i]) >> 8;
+				char firstLetter = (char)firstStream;
+				string[2*i] = firstLetter;
+				string[2*i+1] = secondLetter;
+			}//end if
+			else if (Cpi == 3)
+			{
+				int thirdStream = Z[i] % 256;
+				char thirdLetter = (char)thirdStream;
+				int secondStream = (Z[i]) >> 8;
+				char secondLetter = (char)secondStream;
+				int firstStream = (Z[i]) >> 16;
+				char firstLetter = (char)firstStream;
+				string[3*i] = firstLetter;
+				string[3*i+1] = secondLetter;
+				string[3*i+2] = thirdLetter;
+				// do stuff
+			}//end if
+			else
+			{
+				string[i] =(char)Z[i];// *((unsigned char*)&Z[i]);
+			}//end else
 		}//end for
   }// end pragma
 
