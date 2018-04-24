@@ -52,8 +52,8 @@ int main (int argc, char **argv) {
 	fclose(key); // Close public_key.txt
 
 	// Allocate memory for cyphertexts.
-	unsigned int *m = malloc(Nints*sizeof(unsigned int));
-	unsigned int *a = malloc(Nints*sizeof(unsigned int));
+	unsigned int *m = (unsigned int*) malloc(Nints*sizeof(unsigned int));
+	unsigned int *a = (unsigned int*) malloc(Nints*sizeof(unsigned int));
 
 	// Scan in cypher texts.
 	for (int i = 0; i < Nints; i++)
@@ -87,7 +87,7 @@ int main (int argc, char **argv) {
   unsigned int buffer = 1024;
   unsigned int cpi = (n-1)/8;
   Nchars = Nints*cpi;
-  unsigned char *message = malloc(Nchars*sizeof(unsigned char)); // Allocate space for string
+  unsigned char *message = (unsigned char*) malloc(Nchars*sizeof(unsigned char)); // Allocate space for string
   ElGamalDecrypt(m, a, Nints, p, x); // Decrypt message.
   convertZToString(m, Nints, message, Nchars); // Convert decrypted message to a string.
 	

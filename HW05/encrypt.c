@@ -43,8 +43,8 @@ int main (int argc, char **argv) {
 	unsigned int charsPerint = (n-1)/8;
 
 	padString(message, charsPerint); // Pad string before encryption.
-	unsigned int Nchars = strlen(message);
-	unsigned int Nints = strlen(message)/charsPerint;
+	unsigned int Nchars = mystrlen(message);
+	unsigned int Nints = mystrlen(message)/charsPerint;
 
 	// Create stroage for Zp
 	unsigned int *Zp = malloc(Nints*sizeof(unsigned int));
