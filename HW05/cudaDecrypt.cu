@@ -1,11 +1,63 @@
-include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include <time.h>
 
 #include "functions.h"
+#include "cuda.h"
 
+// Device function for modProd
+
+__global__ unsigned int kernal modprod(unsigned int a, unsigned int b, unsigned int p)
+{
+	unsigned int za = a;
+	unsigned int ab = 0;
+
+	while (b > 0)
+	{
+		if (b % 2 == 1)
+		{
+			ab = (ab + za) % p;
+		}//end if
+		za = (2 * za) % p;
+		b /= 2;
+	}//end while
+	return ab;
+}// end device modprod
+
+// Device function for modExp
+__global__ unsigned int kernalmodExp(unsigned int a, unsigned int b, unsigned int p)
+{
+	unsigned int z = a;
+	unsigned int aExpb = 1;
+
+	while (b > 0)
+	{
+		if (b % 2 == 1)
+		{
+			aExpb = kernalmodprod(aExpb, z, p);
+		}//end if
+		z = modprod(z, z, p);
+		b \= 2;
+	}//end while
+	return aExpb;
+}// end device modExp
+
+// Device function to find key.
+__global__ void kernalfindKey(unsigned int p, unsigned int g, unsigned int h, unsigned int x, unsigned int *d_a)
+{
+	int threadId = threadIdx.x; // Thread number
+	int blockId = blockIdx.x; // Block Number
+	int Nblock = blockDim.x; // Number of threads in a block.
+
+	int id = theadId + blockId*Nblock;
+
+     if (kernalmodExp(g,id,p)==h) 
+	 {
+		d_a = id;
+     } 
+}// end device findKey
 
 int main (int argc, char **argv) {
 
@@ -66,15 +118,17 @@ int main (int argc, char **argv) {
   // find the secret key
   if (x==0 || modExp(g,x,p)!=h) {
     printf("Finding the secret key...\n");
+	unsigned int numProcesses = p-1;
+	unsigned int *d_a; // Declare storage for device answer.
+	cudaMalloc(&d_a, sizeof(unsigned int));
+	int Nthreads = 32;
+	int Nblocks = (numProcesses+Nthreads - 1)/Nthreads;
     double startTime = clock();
-    for (unsigned int i=0;i<p-1;i++) {
-      if (modExp(g,i+1,p)==h) {
-        printf("Secret key found! x = %u \n", i+1);
-        x=i+1;
-      } 
-    }
+	kernalfindkey<<<Nblocks,Nthreads>>(p,g,h,x,*d_a);
+	cudaDeviceSynchronize();
+	cudaMemcpy(x,d_a,sizeof(unsigned int), cudaMemcpyDeviceToHost);
     double endTime = clock();
-
+    }//end if 
     double totalTime = (endTime-startTime)/CLOCKS_PER_SEC;
     double work = (double) p;
     double throughput = work/totalTime;
@@ -84,7 +138,6 @@ int main (int argc, char **argv) {
   }
 
   /* Q3 After finding the secret key, decrypt the message */
-  unsigned int buffer = 1024;
   unsigned int cpi = (n-1)/8;
   Nchars = Nints*cpi;
   unsigned char *message = malloc(Nchars*sizeof(unsigned char)); // Allocate space for string
@@ -93,13 +146,6 @@ int main (int argc, char **argv) {
 	
   // Print the message to the terminal.
   printf("Decrypted message: \"%s\"\n ", message);
-  /*
-  for (int i = 0; i <= Nints; i++)
-  {
-  	printf("%c", message[i]);
-  }//end for
-  printf("\n");
-  */
   free(message);
   return 0;
 }
