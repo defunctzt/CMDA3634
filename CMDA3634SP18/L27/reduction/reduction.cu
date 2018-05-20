@@ -61,20 +61,20 @@ __global__ void reduction(const int N,
   //__syncthreads(); //make sure the write to shared is finished
 
   if (thread<4) {//next half
-   s_sum[thread] += s_sum[thread+4]; 
-  }
-  
-  //__syncthreads(); //make sure the write to shared is finished
-
-  if (thread<2) {//next half
    s_sum[thread] += s_sum[thread+2]; 
   }
   
   //__syncthreads(); //make sure the write to shared is finished
 
+  if (thread<2) {//next half
+   s_sum[thread] += s_sum[thread+1]; 
+  }
+  
+  //__syncthreads(); //make sure the write to shared is finished
+
   if (thread<1) {//final piece
-    s_sum[thread] += s_sum[thread+1];
-    result[block] = s_sum[thread];
+    s_sum[thread] += s_sum[thread+0];
+    result[id] = s_sum[thread];
   }
 }
 
